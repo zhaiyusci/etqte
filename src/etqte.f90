@@ -1,12 +1,12 @@
 !==============================================================================
-!      $$\ $$$$$$$$\ $$$$$$$$\ $$\  $$$$$$\  $$\ $$$$$$$$\ $$$$$$$$\ $$\      =
-!     $$  |$$  _____|\__$$  __|$$ |$$  __$$\ $$ |\__$$  __|$$  _____|\$$\     =
-!    $$  / $$ |         $$ |   $$ |$$ /  $$ |$$ |   $$ |   $$ |       \$$\    =
-!   $$  /  $$$$$\       $$ |   $$ |$$ |  $$ |$$ |   $$ |   $$$$$\      \$$\   =
-!   \$$<   $$  __|      $$ |   $$ |$$ |  $$ |$$ |   $$ |   $$  __|     $$  |  =
-!    \$$\  $$ |         $$ |   $$ |$$ $$\$$ |$$ |   $$ |   $$ |       $$  /   =
-!     \$$\ $$$$$$$$\    $$ |   $$ |\$$$$$$ / $$ |   $$ |   $$$$$$$$\ $$  /    =
-!      \__|\________|   \__|   \__| \___$$$\ \__|   \__|   \________|\__/     =
+!      MM\ MMMMMMMM\ MMMMMMMM\ MM\  MMMMMM\  MM\ MMMMMMMM\ MMMMMMMM\ MM\      =
+!     MM  |MM  _____|\__MM  __|MM |MM  __MM\ MM |\__MM  __|MM  _____|\MM\     =
+!    MM  / MM |         MM |   MM |MM /  MM |MM |   MM |   MM |       \MM\    =
+!   MM  /  MMMMM\       MM |   MM |MM |  MM |MM |   MM |   MMMMM\      \MM\   =
+!   \MM<   MM  __|      MM |   MM |MM |  MM |MM |   MM |   MM  __|     MM  |  =
+!    \MM\  MM |         MM |   MM |MM MM\MM |MM |   MM |   MM |       MM  /   =
+!     \MM\ MMMMMMMM\    MM |   MM |\MMMMMM / MM |   MM |   MMMMMMMM\ MM  /    =
+!      \__|\________|   \__|   \__| \___MMM\ \__|   \__|   \________|\__/     =
 !                                       \___|                                 =
 !==============================================================================
 !==============================================================================
@@ -46,15 +46,17 @@
 program main
   implicit none
   external :: dsyev ! symmetric matrix diagonalization subroutine from lapack
-  character(len=99), external::matrixfile
-  integer :: i, nstate, nsys, sys, istate
+  character(len=99), external::numberedfile
   double precision, allocatable :: h(:,:), e(:)
-  integer, parameter:: narg = 4
-  character(len=99) :: arg(narg)
+  double precision, allocatable :: rho(:,:)
+  character(len=99) :: inputfile
+  integer :: sys, step, fstate
+
+  ! Input information
+  integer :: nstate, nsys, istate, nstep
   character(len=99) :: prefix, suffix
   double precision :: tstep
-  double precision, allocatable :: rho(:,:)
-  integer :: nstep, step
+  common /etqtesetting/ nstate, prefix, suffix, nsys, nstep, tstep, istate
 
   interface
     subroutine readh(filename, n, heff)
@@ -66,15 +68,46 @@ program main
     end subroutine
   end interface
 
-  do i = 1, narg
-    call getarg(i, arg(i))
-  enddo
-  read(arg(1),*) nstate
-  prefix= arg(2)
-  suffix= arg(3)
-  read(arg(4),*) nsys
-  write(*,*) "nstate, prefix, suffix, nsys"
-  write(*,'(i4, 2x,a, 2x, a, 2x, i8)') nstate, trim(prefix), trim(suffix), nsys
+  write(*,*) "==============================================================================="
+  write(*,*) "=      MM\ MMMMMMMM\ MMMMMMMM\ MM\  MMMMMM\  MM\ MMMMMMMM\ MMMMMMMM\ MM\      ="
+  write(*,*) "=     MM  |MM  _____|\__MM  __|MM |MM  __MM\ MM |\__MM  __|MM  _____|\MM\     ="
+  write(*,*) "=    MM  / MM |         MM |   MM |MM /  MM |MM |   MM |   MM |       \MM\    ="
+  write(*,*) "=   MM  /  MMMMM\       MM |   MM |MM |  MM |MM |   MM |   MMMMM\      \MM\   ="
+  write(*,*) "=   \MM<   MM  __|      MM |   MM |MM |  MM |MM |   MM |   MM  __|     MM  |  ="
+  write(*,*) "=    \MM\  MM |         MM |   MM |MM MM\MM |MM |   MM |   MM |       MM  /   ="
+  write(*,*) "=     \MM\ MMMMMMMM\    MM |   MM |\MMMMMM / MM |   MM |   MMMMMMMM\ MM  /    ="
+  write(*,*) "=      \__|\________|   \__|   \__| \___MMM\ \__|   \__|   \________|\__/     ="
+  write(*,*) "=                                       \___|                                 ="
+  write(*,*) "==============================================================================="
+  write(*,*) "==============================================================================="
+  write(*,*) "=========== Energy    Transfer       Quantum        Time   Evolution =========="
+  write(*,*) "================================= Version 1.0.0 ==============================="
+  write(*,*) "=================================== April 2023 ================================"
+  write(*,*) "==============================================================================="
+  write(*,*) "====================== J.-R. Li, Y. Zhai, Z. Qu, and H. Li ===================="
+  write(*,*) "==============================================================================="
+  call getarg(1, inputfile)
+  write(*,*) "The input file is ", inputfile
+  write(*,*) "==============================================================================="
+  call readinput(inputfile)
+  write(*,*) "General settings"
+  write(*,*) "==============================================================================="
+  write(*,"(a30,5x )", advance="no") "number_of_states" 
+  write(*,*)  nstate
+  write(*,"(a30,5x )", advance="no") "prefix_of_matrix_files" 
+  write(*,*)  prefix
+  write(*,"(a30,5x )", advance="no") "suffix_of_matrix_files" 
+  write(*,*)  suffix
+  write(*,"(a30,5x )", advance="no") "number_of_systems" 
+  write(*,*)  nsys
+  write(*,"(a30,5x )", advance="no") "number_of_steps" 
+  write(*,*)  nstep
+  write(*,"(a30,5x )", advance="no") "step_length" 
+  write(*,"(f8.5)")  tstep
+  write(*,"(a30,5x )", advance="no") "initial_state" 
+  write(*,*)  istate
+  write(*,*) "==============================================================================="
+
 
   tstep=1.d0
   nstep=1000
@@ -83,25 +116,90 @@ program main
   allocate(e(nstate))
   allocate(rho(nstate, 0:nstep))
 
+  write(*,*) "*** Start time evolution..."
   do sys = 1, nsys
     ! write(*,*) "***system ",  sys, " is running."
-    call readh(matrixfile(prefix,1,suffix), nstate, h)
+    call readh(numberedfile(prefix,1,suffix), nstate, h)
     call timeevolution(h, nstate, istate, nstep, tstep, rho)
     if(.true.) then
-      open(unit = 1001, file = trim(matrixfile(prefix, sys, suffix))//".out")
-      write(1001,'("#",2x,a4,6x,9(3x,a4,4x))')"time","5620","5621",&
-        &"602","603","604","610","611","612","613"
+      open(unit = 1001, file = trim(numberedfile(prefix, sys, suffix))//".etout")
+      write(1001, "(a18)", advance = "no") "#             time"
+      do fstate = 1, nstate
+        write(1001, "(a10,i3)", advance = "no") "rho_", fstate
+      enddo
+      write(1001, *) 
       do step = 0, nstep
-        write(1001,'(e10.4,10(x,f10.4))') step*tstep , rho(:,step)
+        write(1001,'(f18.5,10(x,f12.6))') step*tstep , rho(:,step)
       enddo
       close(1001)
     endif
   enddo
 
-  stop
-
+  write(*,*) "*** End time evolution... "
+  write(*,*) "*** Time evolution of each sampled system has been written to .etout files."
 
 end program main
+
+subroutine readinput(fname)
+  implicit none
+  character(len=99), intent(in) :: fname
+  character(len=99) :: tit, val
+  character(len=200) :: line
+  integer :: io, i
+
+  ! Input information
+  integer :: nstate, nsys, istate, nstep
+  character(len=99) :: prefix, suffix
+  double precision :: tstep
+  common /etqtesetting/ nstate, prefix, suffix, nsys, nstep, tstep, istate
+
+  open(unit = 99, file = trim(adjustl(fname)))
+  rewind(99)
+  do while(.true.)
+    read(99,"(a200)",iostat = io) line
+    if(io .eq. 0) then
+      ! We have some problem with fortran... it cannot read in string containing slash...
+      ! This is a possible solution, who knows...
+      do i = 1,200
+        if(line(i:i) .eq. "/") then
+          ! I do not think there is any nut want his/her file name has a char "#"
+          ! so it should be safe to use it as a placeholder
+          line(i:i) = "#" 
+        endif
+      enddo
+      read(line, *) tit, val
+      do i = 1,99
+        if(val(i:i) .eq. "#") then
+          val(i:i) = "/"
+        endif
+        ! I think we will not have problem with tit
+      enddo
+      if (tit .eq. "number_of_states") then
+        read(val,*) nstate
+      elseif( tit .eq. "prefix_of_matrix_files") then
+        prefix = val
+      elseif( tit .eq. "suffix_of_matrix_files") then
+        suffix = val
+      elseif( tit .eq. "number_of_systems") then
+        read(val,*) nsys
+      elseif( tit .eq. "number_of_steps") then
+        read(val,*) nstep
+      elseif( tit .eq. "step_length") then
+        read(val,*) tstep
+      elseif( tit .eq. "initial_state") then
+        read(val,*) istate
+      endif
+    elseif(io .gt. 0) then
+      write(*,*) "*** Something went wrong! Check "// fname // "."
+      stop
+    else
+      exit
+    endif
+  enddo
+  close(99)
+
+  return
+end subroutine readinput
 
 
 
@@ -130,16 +228,16 @@ end subroutine readh
 ! this function returns the file name of matrices.
 ! here i follow jia-rui's convention.
 ! we assume the input matrices are in atomic units
-character(len=99) function matrixfile(prefix, i, suffix)
+character(len=99) function numberedfile(prefix, i, suffix)
   implicit none
   character(len=50), intent(in) :: prefix
   integer, intent(in) :: i
   character(len=50), intent(in) :: suffix
   character*20 :: ai
   write(ai, *) i
-  write(matrixfile, "(a, a, a)") trim(adjustl(prefix)), trim(adjustl(ai)), trim(adjustl(suffix))
+  numberedfile  = trim(adjustl(prefix)) // trim(adjustl(ai)) // trim(adjustl(suffix))
   return 
-end function matrixfile
+end function numberedfile
 
 ! the quantum time evolution subroutine
 subroutine timeevolution(h, nstate, istate, nstep, tstep, rho)

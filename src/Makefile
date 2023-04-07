@@ -1,5 +1,5 @@
 F90=gfortran
-FFLAGS=-O3 -Wall
+FFLAGS=-O3 -Wall -fno-align-commons
 .PHONY: all clean
 
 all: etqte.exe
