@@ -5,7 +5,7 @@ CC=g++
 CCFLAGS=--std=c++17 -Ofast -Wall -lfmt
 .PHONY: all clean
 
-all: etqte.f90.exe etqte.cc.exe
+all: etqte.cc.exe
 
 etqte.cc.exe: etqte.cc
 	$(CC) $(CCFLAGS) -llapack etqte.cc -o etqte.cc.exe
