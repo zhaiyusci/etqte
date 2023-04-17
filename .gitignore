@@ -34,3 +34,6 @@
 # Output
 *.etout
 *.etcc
+
+# Backup files
+*.bak

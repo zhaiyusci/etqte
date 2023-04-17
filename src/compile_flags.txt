@@ -1,0 +1,6 @@
+-O3
+-Wall
+-Werror
+-fPIC
+--std=c++17
+-Iinclude

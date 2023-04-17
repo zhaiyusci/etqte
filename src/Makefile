@@ -2,13 +2,14 @@ F90=gfortran
 FFLAGS=-O3 -Wall -fno-align-commons
 
 CC=g++
-CCFLAGS=--std=c++17 -Ofast -Wall -lfmt
+# CCFLAGS=--std=c++17 -Ofast -W -Iinclude
+CCFLAGS=--std=c++17 -Ofast -W -isystem include
 .PHONY: all clean
 
 all: etqte.cc.exe
 
 etqte.cc.exe: etqte.cc
-	$(CC) $(CCFLAGS) -llapack etqte.cc -o etqte.cc.exe
+	$(CC) $(CCFLAGS) etqte.cc -o etqte.cc.exe
 
 etqte.f90.exe: etqte.f90
 	$(F90) $(FFLAGS) -llapack etqte.f90 -o etqte.f90.exe
