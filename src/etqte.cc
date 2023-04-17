@@ -65,10 +65,8 @@
 #include <utility>
 #include <vector>
 
-namespace etqte
-{
-class isosys
-{
+namespace etqte {
+class isosys {
 public:
   // General settings
   size_t nstate;
@@ -87,44 +85,19 @@ public:
 
 public:
   // Constructor
-  isosys(size_t nstate,
-         std::vector<std::string> statenames,
+  isosys(size_t nstate, std::vector<std::string> statenames,
          std::string matrixfname)
-    : nstate(nstate)
-    , statenames(statenames)
-    , matrixfname(matrixfname)
-    , H()
-    , E()
-    , psi()
-    , istate(0)
-    , nstep(0)
-    , tstep(0.0)
-    , rho()
-    , rho0(nstate)
-  {
+      : nstate(nstate), statenames(statenames), matrixfname(matrixfname), H(),
+        E(), psi(), istate(0), nstep(0), tstep(0.0), rho(), rho0(nstate) {
     readhamiltonian();
   }
 
   // Constructor
-  isosys(size_t nstate,
-         std::vector<size_t> states_selected,
-         size_t nstatep,
-         std::vector<std::string> statenamesp,
-         std::string matrixfname)
-    : nstate(nstate)
-    , statenames()
-    , matrixfname(matrixfname)
-    , H()
-    , E()
-    , psi()
-    , istate(0)
-    , nstep(0)
-    , tstep(0.0)
-    , rho()
-    , rho0(nstate)
-  {
-    for (size_t i = 0; i != nstate; ++i)
-    {
+  isosys(size_t nstate, std::vector<size_t> states_selected, size_t nstatep,
+         std::vector<std::string> statenamesp, std::string matrixfname)
+      : nstate(nstate), statenames(), matrixfname(matrixfname), H(), E(), psi(),
+        istate(0), nstep(0), tstep(0.0), rho(), rho0(nstate) {
+    for (size_t i = 0; i != nstate; ++i) {
       statenames.push_back(statenamesp[i]);
     }
     readhamiltonian(nstatep, states_selected);
@@ -132,14 +105,11 @@ public:
 
   // This function read in the elements of effective Hamiltonian
   // Here I follow Jia-Rui's convention.
-  int readhamiltonian()
-  {
+  int readhamiltonian() {
     std::ifstream io(matrixfname);
     int tmp;
-    for (size_t i = 0; i != nstate; ++i)
-    {
-      for (size_t j = 0; j != nstate; ++j)
-      {
+    for (size_t i = 0; i != nstate; ++i) {
+      for (size_t j = 0; j != nstate; ++j) {
         io >> tmp >> tmp >> H(i, j);
       }
     }
@@ -153,15 +123,12 @@ public:
 
   // This function read in the elements of effective Hamiltonian
   // Here I follow Jia-Rui's convention.
-  int readhamiltonian(size_t nstatep, std::vector<size_t> states_selected)
-  {
+  int readhamiltonian(size_t nstatep, std::vector<size_t> states_selected) {
     std::ifstream io(matrixfname);
     int tmp;
     Eigen::MatrixXd H(nstatep, nstatep);
-    for (size_t i = 0; i != nstatep; ++i)
-    {
-      for (size_t j = 0; j != nstatep; ++j)
-      {
+    for (size_t i = 0; i != nstatep; ++i) {
+      for (size_t j = 0; j != nstatep; ++j) {
         io >> tmp >> tmp >> H(i, j);
       }
     }
@@ -174,26 +141,20 @@ public:
     return 0;
   }
 
-  static int writetimeseries(std::string fname,
-                             size_t nstate,
-                             const std::vector<std::string>& statenames,
-                             size_t nstep,
-                             double tstep,
-                             const std::vector<Eigen::VectorXd>& instval,
-                             const Eigen::VectorXd& infval)
-  {
-    FILE* output = fopen(fname.c_str(), "w");
+  static int writetimeseries(std::string fname, size_t nstate,
+                             const std::vector<std::string> &statenames,
+                             size_t nstep, double tstep,
+                             const std::vector<Eigen::VectorXd> &instval,
+                             const Eigen::VectorXd &infval) {
+    FILE *output = fopen(fname.c_str(), "w");
     fmt::print(output, "#             time");
-    for (size_t state = 0; state != nstate; ++state)
-    {
+    for (size_t state = 0; state != nstate; ++state) {
       fmt::print(output, FMT_COMPILE("{:>13s}"), statenames[state]);
     }
     fmt::print(output, "\n");
-    for (size_t step = 0; step != nstep; ++step)
-    {
+    for (size_t step = 0; step != nstep; ++step) {
       fmt::print(output, FMT_COMPILE("{:18.5f}"), step * tstep);
-      for (size_t state = 0; state != nstate; ++state)
-      {
+      for (size_t state = 0; state != nstate; ++state) {
         fmt::print(output, FMT_COMPILE("{:13.5f}"), instval[step][state]);
       }
       fmt::print(output, "\n");
@@ -201,14 +162,12 @@ public:
     // We use a long enough time to present an infinite long time
     fmt::print(output, "\n");
     fmt::print(output, FMT_COMPILE("{:18.5f}"), nstep * tstep * 1.2);
-    for (size_t state = 0; state != nstate; ++state)
-    {
+    for (size_t state = 0; state != nstate; ++state) {
       fmt::print(output, FMT_COMPILE("{:13.5f}"), infval[state]);
     }
     fmt::print(output, "\n");
     fmt::print(output, FMT_COMPILE("{:18.5f}"), nstep * tstep * 2);
-    for (size_t state = 0; state != nstate; ++state)
-    {
+    for (size_t state = 0; state != nstate; ++state) {
       fmt::print(output, FMT_COMPILE("{:13.5f}"), infval[state]);
     }
     fmt::print(output, "\n");
@@ -218,20 +177,13 @@ public:
     return 0;
   }
 
-  int writerhos()
-  {
-    writetimeseries(matrixfname + std::string(".etcc"),
-                    nstate,
-                    statenames,
-                    nstep,
-                    tstep,
-                    rho,
-                    rho0);
+  int writerhos() {
+    writetimeseries(matrixfname + std::string(".etcc"), nstate, statenames,
+                    nstep, tstep, rho, rho0);
     return 0;
   }
 
-  int eigenstates()
-  {
+  int eigenstates() {
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(H);
     E = es.eigenvalues();
     psi = es.eigenvectors();
@@ -239,8 +191,7 @@ public:
   }
 
   // The quantum time evolution function
-  int timeevolution(size_t istate, size_t nstep, double tstep)
-  {
+  int timeevolution(size_t istate, size_t nstep, double tstep) {
     this->istate = istate;
     this->nstep = nstep;
     this->tstep = tstep;
@@ -254,30 +205,24 @@ public:
     Eigen::MatrixXd param(nstate, upsize);
     Eigen::VectorXd DeltaE(upsize);
 
-    for (size_t fstate = 0; fstate != nstate; ++fstate)
-    {
-      for (size_t i = 0; i != nstate; ++i)
-      {
+    for (size_t fstate = 0; fstate != nstate; ++fstate) {
+      for (size_t i = 0; i != nstate; ++i) {
         rho0(fstate) +=
-          std::pow(psi(istate, i), 2) * std::pow(psi(fstate, i), 2);
+            std::pow(psi(istate, i), 2) * std::pow(psi(fstate, i), 2);
       }
       size_t iii = 0;
-      for (size_t i = 0; i != nstate; ++i)
-      {
-        for (size_t j = i + 1; j != nstate; ++j)
-        {
+      for (size_t i = 0; i != nstate; ++i) {
+        for (size_t j = i + 1; j != nstate; ++j) {
           param(fstate, iii) =
-            psi(istate, i) * psi(istate, j) * psi(fstate, i) * psi(fstate, j);
+              psi(istate, i) * psi(istate, j) * psi(fstate, i) * psi(fstate, j);
           ++iii;
         }
       }
     }
     param *= 2.0;
     size_t iii = 0;
-    for (size_t i = 0; i != nstate; ++i)
-    {
-      for (size_t j = i + 1; j != nstate; ++j)
-      {
+    for (size_t i = 0; i != nstate; ++i) {
+      for (size_t j = i + 1; j != nstate; ++j) {
         DeltaE(iii) = E(j) - E(i);
         ++iii;
       }
@@ -288,17 +233,16 @@ public:
     // extremely slow.
     // Ref: Chen & Guo, Comput. Phys. Comm. 119, 19-31 (1999)
     Eigen::VectorXd omega =
-      (tstep * DeltaE).unaryExpr<double (*)(double)>(&std::cos);
+        (tstep * DeltaE).unaryExpr<double (*)(double)>(&std::cos);
 
     // The follwoing is for k = 0...
     // Eigen::VectorXd chebyshev_k(upsize);
     // Eigen::VectorXd chebyshev_k_1(upsize);
     Eigen::VectorXd chebyshev_k = Eigen::VectorXd::Ones(upsize);
     Eigen::VectorXd chebyshev_k_1 = omega;
-    auto* chb_k = &chebyshev_k;
-    auto* chb_k_1 = &chebyshev_k_1;
-    for (size_t step = 0; step != nstep; ++step)
-    {
+    auto *chb_k = &chebyshev_k;
+    auto *chb_k_1 = &chebyshev_k_1;
+    for (size_t step = 0; step != nstep; ++step) {
       Eigen::VectorXd rho = param * (*chb_k) + rho0;
       this->rho.push_back(std::move(rho));
       *chb_k_1 = (2 * omega.array() * chb_k->array()).matrix() - (*chb_k_1);
@@ -308,22 +252,19 @@ public:
     return 0;
   }
 
-  isosys subsystem(std::vector<size_t>& states_selected)
-  {
+  isosys subsystem(std::vector<size_t> &states_selected) {
     isosys subsys = *this;
     subsys.nstate = states_selected.size();
     subsys.H = this->H(states_selected, states_selected);
     subsys.statenames.clear();
-    for (auto&& i : states_selected)
-    {
+    for (auto &&i : states_selected) {
       subsys.statenames.push_back(this->statenames[i]);
     }
     return subsys;
   }
 };
 
-class ensemble
-{
+class ensemble {
 private:
   // General settings
   size_t nstate, nsys, istate, nstep, nstatep;
@@ -339,136 +280,116 @@ private:
   Eigen::VectorXd averrho0;
 
 public:
-  int writerhos()
-  {
-    for (auto&& sys : systems)
-    {
+  int writerhos() {
+    for (auto &&sys : systems) {
       sys.writerhos();
     }
     return 0;
   }
 
   // Read the input file, a sample of which is provided.
-  int readsettings(const std::string& fname)
-  {
-    try
-    {
+  int readsettings(const std::string &fname) {
+    try {
       auto settings = toml::parse_file(fname);
       nstate =
-        settings["etqtesettings"]["number_of_states_selected"].value_or(0);
+          settings["etqtesettings"]["number_of_states_selected"].value_or(0);
       nstatep =
-        settings["etqtesettings"]["number_of_states_presented"].value_or(0);
+          settings["etqtesettings"]["number_of_states_presented"].value_or(0);
       prefix = settings["etqtesettings"]["prefix_of_matrix_files"].value_or("");
       suffix = settings["etqtesettings"]["suffix_of_matrix_files"].value_or("");
       nsys = settings["etqtesettings"]["number_of_systems"].value_or(0);
       nstep = settings["etqtesettings"]["number_of_steps"].value_or(0);
       tstep = settings["etqtesettings"]["step_length"].value_or(0.0);
       std::string istate =
-        settings["etqtesettings"]["initial_state"].value_or("");
+          settings["etqtesettings"]["initial_state"].value_or("");
 
       if (auto arr =
-            settings["etqtesettings"]["state_names_presented"].as_array())
-      {
+              settings["etqtesettings"]["state_names_presented"].as_array()) {
 
         statenamesp.clear();
-        for (auto&& i : *arr)
-        {
+        for (auto &&i : *arr) {
           statenamesp.push_back(i.as_string()->value_or(""));
         }
-      }
-      else
-      {
+      } else {
         throw std::runtime_error("Please provide the states' names.");
       }
 
       if (auto arr =
-            settings["etqtesettings"]["state_names_selected"].as_array())
-      {
+              settings["etqtesettings"]["state_names_selected"].as_array()) {
         statenames.clear();
-        for (auto&& i : *arr)
-        {
+        for (auto &&i : *arr) {
           statenames.push_back(i.as_string()->value_or(""));
         }
       }
 
-      if (statenames.size() != nstate)
-      {
-        throw std::runtime_error("The size of state_names_selected does not consist with number_of_states_selected.");
+      if (statenames.size() != nstate) {
+        throw std::runtime_error("The size of state_names_selected does not "
+                                 "consist with number_of_states_selected.");
       }
 
-      if (statenamesp.size() != nstatep)
-      {
-        throw std::runtime_error("The size of state_names_presented does not consist with number_of_states_presented.");
+      if (statenamesp.size() != nstatep) {
+        throw std::runtime_error("The size of state_names_presented does not "
+                                 "consist with number_of_states_presented.");
       }
 
-      if (nstate > nstatep)
-      {
-        throw std::runtime_error("number_of_states_selected exceeds number_of_states_presented.");
-      }
-      std::map<std::string, size_t> statemap;
-      for (size_t i = 0; i != nstatep; ++i)
-      {
-        statemap[statenamesp[i]] = i;
+      if (nstate > nstatep) {
+        throw std::runtime_error(
+            "number_of_states_selected exceeds number_of_states_presented.");
       }
 
-      if (nstate <= 0)
-      {
+      if (nstate <= 0) {
         // Inthis case, treat all states as selected.
         nstate = nstatep;
         statenames = statenamesp;
-        for (size_t i = 0; i != nstate; ++i)
-        {
+        for (size_t i = 0; i != nstate; ++i) {
           states_selected.push_back(i);
-          if (statenames[i] == istate)
-          {
+          if (statenames[i] == istate) {
             this->istate = i;
           }
         }
       }
 
-      if (nstate != nstatep)
-      {
+      if (nstate != nstatep) {
         // Selected the states we are interested in.
-        for (size_t i = 0; i != nstate; ++i)
-        {
+        std::map<std::string, size_t> statemap;
+        for (size_t i = 0; i != nstatep; ++i) {
+          statemap[statenamesp[i]] = i;
+        }
+        for (size_t i = 0; i != nstate; ++i) {
           states_selected.push_back(statemap[statenames[i]]);
-          if (statenames[i] == istate)
-          {
+          if (statenames[i] == istate) {
             this->istate = i;
           }
         }
       }
 
-    } catch (const toml::parse_error& err){
-      std::cout << "Error caught: "<<  err.what() << std::endl;
-      std::cout << "*** This error is raised by toml++ libaray, which indicates that your input file does not meet the syntax requirement of toml format." << std::endl;
+    } catch (const toml::parse_error &err) {
+      std::cout << "Error caught: " << err.what() << std::endl;
+      std::cout << "*** This error is raised by toml++ libaray, which "
+                   "indicates that your input file does not meet the syntax "
+                   "requirement of toml format."
+                << std::endl;
       throw;
-    } catch (const std::runtime_error& err){
-      std::cout << "Error caught: "<<  err.what() << std::endl;
-      std::cout << "*** This error is raised by the main logic of <ET|Q|TE>." << std::endl;
+    } catch (const std::runtime_error &err) {
+      std::cout << "Error caught: " << err.what() << std::endl;
+      std::cout << "*** This error is raised by the main logic of <ET|Q|TE>."
+                << std::endl;
       throw;
     }
-
 
     return 0;
   }
 
   // This function read in the elements of effective Hamiltonian
   // Here I follow Jia-Rui's convention.
-  int readhamiltonian()
-  {
-    if (nstate == 0)
-    {
-      for (size_t sys = 0; sys != nsys; ++sys)
-      {
+  int readhamiltonian() {
+    if (nstate == 0) {
+      for (size_t sys = 0; sys != nsys; ++sys) {
         std::string fname = fmt::format("{}{}{}", prefix, sys + 1, suffix);
         systems.push_back(isosys(nstatep, statenamesp, fname));
       }
-    }
-    else
-    {
-      for (size_t sys = 0; sys != nsys; ++sys)
-      {
+    } else {
+      for (size_t sys = 0; sys != nsys; ++sys) {
         std::string fname = fmt::format("{}{}{}", prefix, sys + 1, suffix);
         systems.push_back(
             isosys(nstate, states_selected, nstatep, statenamesp, fname));
@@ -478,85 +399,72 @@ public:
   }
 
   // The quantum time evolution function
-  int timeevolution()
-  {
-    for (auto&& sys : systems)
-    {
+  int timeevolution() {
+    for (auto &&sys : systems) {
       sys.eigenstates();
       sys.timeevolution(istate, nstep, tstep);
     }
     return 0;
   }
 
-  ensemble(const std::string& input)
-  {
+  ensemble(const std::string &input) {
     readsettings(input);
     return;
   }
 
-  int driver2023()
-  {
+  int driver2023() {
     std::cout << "*** Read Hamiltonian matrices in...\n";
     readhamiltonian();
     std::cout << "*** Done.\n" << std::flush;
 
     {
       std::cout << "*** Start time evolution...\n";
-      auto&& t0 = std::chrono::high_resolution_clock::now();
+      auto &&t0 = std::chrono::high_resolution_clock::now();
       timeevolution();
-      auto&& t1 = std::chrono::high_resolution_clock::now();
-      std::chrono::duration<double>&& difft = t1 - t0;
+      auto &&t1 = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> &&difft = t1 - t0;
       std::cout << "*** End time evolution.\n"
-        << "*** Job is done in " << difft.count() << " sec."
-        << std::endl;
+                << "*** Job is done in " << difft.count() << " sec."
+                << std::endl;
     }
     {
-      auto&& t0 = std::chrono::high_resolution_clock::now();
+      auto &&t0 = std::chrono::high_resolution_clock::now();
       writerhos();
-      auto&& t1 = std::chrono::high_resolution_clock::now();
-      std::chrono::duration<double>&& difft = t1 - t0;
+      auto &&t1 = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> &&difft = t1 - t0;
       std::cout << "*** Time evolution of each sampled system has been written "
-        "to .etcc files.\n"
-        << "*** Job is done in " << difft.count() << " sec."
-        << std::endl;
+                   "to .etcc files.\n"
+                << "*** Job is done in " << difft.count() << " sec."
+                << std::endl;
     }
 
     std::cout << "*** Start ensemble average..." << std::endl;
     averrho.resize(nstep);
-    for (size_t step = 0; step != nstep; ++step)
-    {
+    for (size_t step = 0; step != nstep; ++step) {
       averrho[step] = Eigen::VectorXd::Zero(nstate);
-      for (size_t sys = 0; sys != nsys; ++sys)
-      {
+      for (size_t sys = 0; sys != nsys; ++sys) {
         averrho[step] += systems[sys].rho[step];
       }
       averrho[step] /= nsys;
     }
     averrho0 = Eigen::VectorXd::Zero(nstate);
-    for (size_t sys = 0; sys != nsys; ++sys)
-    {
+    for (size_t sys = 0; sys != nsys; ++sys) {
       averrho0 += systems[sys].rho0;
     }
     averrho0 /= nsys;
 
     isosys::writetimeseries(fmt::format("{}{}{}.etcc", prefix, 0, suffix),
-        nstate,
-        statenames,
-        nstep,
-        tstep,
-        averrho,
-        averrho0);
+                            nstate, statenames, nstep, tstep, averrho,
+                            averrho0);
     std::cout << "*** Time evolution of the whole ensemble has been written to "
-      "the zeroth .etcc files."
-      << std::endl;
+                 "the zeroth .etcc files."
+              << std::endl;
 
     return 0;
   }
 };
 
-  static int
-printbanner(std::ostream& io)
-{
+static int printbanner(std::ostream &io) {
   io << R"foo(
  ===============================================================================
  =      MM\ MMMMMMMM\ MMMMMMMM\ MM\  MMMMMM\  MM\ MMMMMMMM\ MMMMMMMM\ MM\      =
@@ -577,17 +485,15 @@ printbanner(std::ostream& io)
  ====================== J.-R. Li, Y. Zhai, Z. Qu, and H. Li ====================
  ===============================================================================
     )foo"
-  << std::endl;
+     << std::endl;
   return 0;
 }
 } // namespace etqte
 
-  int
-main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
   using namespace etqte;
   etqte::printbanner(std::cout);
-  ensemble impl{ std::string(argv[1]) };
+  ensemble impl{std::string(argv[1])};
   impl.driver2023();
   return 0;
 }
