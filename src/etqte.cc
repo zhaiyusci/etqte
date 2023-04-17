@@ -351,70 +351,104 @@ public:
   // Read the input file, a sample of which is provided.
   int readsettings(const std::string& fname)
   {
-    auto settings = toml::parse_file(fname);
-    nstate = settings["etqtesettings"]["number_of_states_selected"].value_or(0);
-    nstatep =
-      settings["etqtesettings"]["number_of_states_presented"].value_or(0);
-    prefix = settings["etqtesettings"]["prefix_of_matrix_files"].value_or("");
-    suffix = settings["etqtesettings"]["suffix_of_matrix_files"].value_or("");
-    nsys = settings["etqtesettings"]["number_of_systems"].value_or(0);
-    nstep = settings["etqtesettings"]["number_of_steps"].value_or(0);
-    tstep = settings["etqtesettings"]["step_length"].value_or(0.0);
-    istate = settings["etqtesettings"]["initial_state"].value_or(0) - 1;
-    statenamesp.clear();
-    std::cout << "Ln. " << __LINE__ << std::endl;
-    for (auto&& i :
-         *settings["etqtesettings"]["state_names_presented"].as_array())
+    try
     {
-      statenamesp.push_back(i.as_string()->value_or(""));
-    }
-    statenames.clear();
-    for (auto&& i :
-         *settings["etqtesettings"]["state_names_selected"].as_array())
-    {
-      statenames.push_back(i.as_string()->value_or(""));
-    }
+      auto settings = toml::parse_file(fname);
+      nstate =
+        settings["etqtesettings"]["number_of_states_selected"].value_or(0);
+      nstatep =
+        settings["etqtesettings"]["number_of_states_presented"].value_or(0);
+      prefix = settings["etqtesettings"]["prefix_of_matrix_files"].value_or("");
+      suffix = settings["etqtesettings"]["suffix_of_matrix_files"].value_or("");
+      nsys = settings["etqtesettings"]["number_of_systems"].value_or(0);
+      nstep = settings["etqtesettings"]["number_of_steps"].value_or(0);
+      tstep = settings["etqtesettings"]["step_length"].value_or(0.0);
+      std::string istate =
+        settings["etqtesettings"]["initial_state"].value_or("");
 
-    std::cout << "Ln. " << __LINE__ << std::endl;
-    // Health check
-    bool health = true;
-    do
-    {
+      if (auto arr =
+            settings["etqtesettings"]["state_names_presented"].as_array())
+      {
+
+        statenamesp.clear();
+        for (auto&& i : *arr)
+        {
+          statenamesp.push_back(i.as_string()->value_or(""));
+        }
+      }
+      else
+      {
+        throw std::runtime_error("Please provide the states' names.");
+      }
+
+      if (auto arr =
+            settings["etqtesettings"]["state_names_selected"].as_array())
+      {
+        statenames.clear();
+        for (auto&& i : *arr)
+        {
+          statenames.push_back(i.as_string()->value_or(""));
+        }
+      }
+
       if (statenames.size() != nstate)
       {
-        std::cout << "*** The size of state_names does not consist with nstate."
-                  << std::endl;
-        health = false;
-        break;
+        throw std::runtime_error("The size of state_names_selected does not consist with number_of_states_selected.");
       }
 
       if (statenamesp.size() != nstatep)
       {
-        std::cout << "*** The size of state_names does not consist with nstate."
-                  << std::endl;
-        health = false;
-        break;
+        throw std::runtime_error("The size of state_names_presented does not consist with number_of_states_presented.");
       }
-    } while (false);
 
-    if (!health)
-    {
-      exit(-1);
+      if (nstate > nstatep)
+      {
+        throw std::runtime_error("number_of_states_selected exceeds number_of_states_presented.");
+      }
+      std::map<std::string, size_t> statemap;
+      for (size_t i = 0; i != nstatep; ++i)
+      {
+        statemap[statenamesp[i]] = i;
+      }
+
+      if (nstate <= 0)
+      {
+        // Inthis case, treat all states as selected.
+        nstate = nstatep;
+        statenames = statenamesp;
+        for (size_t i = 0; i != nstate; ++i)
+        {
+          states_selected.push_back(i);
+          if (statenames[i] == istate)
+          {
+            this->istate = i;
+          }
+        }
+      }
+
+      if (nstate != nstatep)
+      {
+        // Selected the states we are interested in.
+        for (size_t i = 0; i != nstate; ++i)
+        {
+          states_selected.push_back(statemap[statenames[i]]);
+          if (statenames[i] == istate)
+          {
+            this->istate = i;
+          }
+        }
+      }
+
+    } catch (const toml::parse_error& err){
+      std::cout << "Error caught: "<<  err.what() << std::endl;
+      std::cout << "*** This error is raised by toml++ libaray, which indicates that your input file does not meet the syntax requirement of toml format." << std::endl;
+      throw;
+    } catch (const std::runtime_error& err){
+      std::cout << "Error caught: "<<  err.what() << std::endl;
+      std::cout << "*** This error is raised by the main logic of <ET|Q|TE>." << std::endl;
+      throw;
     }
 
-    std::cout << "Ln. " << __LINE__ << std::endl;
-    std::map<std::string, size_t> statemap;
-    for (size_t i = 0; i != nstatep; ++i)
-    {
-      statemap[statenamesp[i]] = i;
-    }
-    std::cout << "Ln. " << __LINE__ << std::endl;
-
-    for (auto&& i : statenames)
-    {
-      states_selected.push_back(statemap[i]);
-    }
-    std::cout << "Ln. " << __LINE__ << std::endl;
 
     return 0;
   }
@@ -437,7 +471,7 @@ public:
       {
         std::string fname = fmt::format("{}{}{}", prefix, sys + 1, suffix);
         systems.push_back(
-          isosys(nstate, states_selected, nstatep, statenamesp, fname));
+            isosys(nstate, states_selected, nstatep, statenamesp, fname));
       }
     }
     return 0;
@@ -473,8 +507,8 @@ public:
       auto&& t1 = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double>&& difft = t1 - t0;
       std::cout << "*** End time evolution.\n"
-                << "*** Job is done in " << difft.count() << " sec."
-                << std::endl;
+        << "*** Job is done in " << difft.count() << " sec."
+        << std::endl;
     }
     {
       auto&& t0 = std::chrono::high_resolution_clock::now();
@@ -482,9 +516,9 @@ public:
       auto&& t1 = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double>&& difft = t1 - t0;
       std::cout << "*** Time evolution of each sampled system has been written "
-                   "to .etcc files.\n"
-                << "*** Job is done in " << difft.count() << " sec."
-                << std::endl;
+        "to .etcc files.\n"
+        << "*** Job is done in " << difft.count() << " sec."
+        << std::endl;
     }
 
     std::cout << "*** Start ensemble average..." << std::endl;
@@ -506,21 +540,21 @@ public:
     averrho0 /= nsys;
 
     isosys::writetimeseries(fmt::format("{}{}{}.etcc", prefix, 0, suffix),
-                            nstate,
-                            statenames,
-                            nstep,
-                            tstep,
-                            averrho,
-                            averrho0);
+        nstate,
+        statenames,
+        nstep,
+        tstep,
+        averrho,
+        averrho0);
     std::cout << "*** Time evolution of the whole ensemble has been written to "
-                 "the zeroth .etcc files."
-              << std::endl;
+      "the zeroth .etcc files."
+      << std::endl;
 
     return 0;
   }
 };
 
-static int
+  static int
 printbanner(std::ostream& io)
 {
   io << R"foo(
@@ -543,12 +577,12 @@ printbanner(std::ostream& io)
  ====================== J.-R. Li, Y. Zhai, Z. Qu, and H. Li ====================
  ===============================================================================
     )foo"
-     << std::endl;
+  << std::endl;
   return 0;
 }
 } // namespace etqte
 
-int
+  int
 main(int argc, char** argv)
 {
   using namespace etqte;
