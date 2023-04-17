@@ -3,16 +3,17 @@
 #define TOML_ENABLE_WINDOWS_COMPAT 0
 #define TOML_ENABLE_FORMATTERS 0
 #include "toml.hh"
+#include <chrono>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/src/Core/Matrix.h>
 #include <eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h>
-#include <fmt/core.h>
 #include <fmt/compile.h>
+#include <fmt/core.h>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
-#include <chrono>
 
 class etqte {
 private:
@@ -34,7 +35,9 @@ public:
   int writetimeseries(int sys, std::vector<Eigen::VectorXd> &instval,
                       Eigen::VectorXd &infval) {
     FILE *output =
-        fopen(fmt::format(FMT_COMPILE("{}{}{}.etcc"), prefix, sys + 1, suffix).c_str(), "w");
+        fopen(fmt::format(FMT_COMPILE("{}{}{}.etcc"), prefix, sys + 1, suffix)
+                  .c_str(),
+              "w");
     fmt::print(output, "#             time");
     for (size_t state = 0; state != nstate; ++state) {
       fmt::print(output, FMT_COMPILE("      phi_{:3d}"), state + 1);
@@ -89,7 +92,10 @@ public:
         io >> tmp >> tmp >> H(i, j);
       }
     }
-    this->H.push_back(H);
+    // N.B.
+    // I have tried to use std::move here, but actually no visable boost up
+    // I guess this is because the compiler have already deal with the plain version.
+    this->H.push_back(H); 
     io.close();
     return 0;
   }
@@ -97,18 +103,16 @@ public:
   // The quantum time evolution function
   int timeevolution(size_t sys) {
     const size_t upsize = nstate * (nstate - 1) / 2;
-    Eigen::MatrixXd param(nstate, upsize);
-    Eigen::VectorXd DeltaE(upsize);
-    // Eigen::VectorXd omega(upsize);
 
-    Eigen::VectorXd E(nstate);
-    Eigen::MatrixXd psi(nstate, nstate);
     std::vector<Eigen::VectorXd> rho(nstep, Eigen::VectorXd(nstate));
     Eigen::VectorXd rho0(Eigen::VectorXd::Zero(nstate));
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(H[sys]);
-    E = es.eigenvalues();
-    psi = es.eigenvectors();
+    Eigen::VectorXd E = es.eigenvalues();
+    Eigen::MatrixXd psi = es.eigenvectors();
+
+    Eigen::MatrixXd param(nstate, upsize);
+    Eigen::VectorXd DeltaE(upsize);
 
     for (size_t fstate = 0; fstate != nstate; ++fstate) {
       for (size_t i = 0; i != nstate; ++i) {
@@ -145,15 +149,18 @@ public:
     // Eigen::VectorXd chebyshev_k_1(upsize);
     Eigen::VectorXd chebyshev_k = Eigen::VectorXd::Ones(upsize);
     Eigen::VectorXd chebyshev_k_1 = omega;
+    auto * chb_k = &chebyshev_k;
+    auto * chb_k_1 = &chebyshev_k_1;
     for (size_t step = 0; step != nstep; ++step) {
-      rho[step] = param * chebyshev_k + rho0;
-      chebyshev_k_1 =
-          (2 * omega.array() * chebyshev_k.array()).matrix() - chebyshev_k_1;
-      chebyshev_k += chebyshev_k_1;
-      chebyshev_k_1 = chebyshev_k - chebyshev_k_1;
-      chebyshev_k -= chebyshev_k_1;
+      rho[step] = param * (*chb_k) + rho0;
+      *chb_k_1 =
+          (2 * omega.array() * chb_k->array()).matrix() - (*chb_k_1);
+      std::swap(chb_k, chb_k_1);
     }
 
+    // N.B.
+    // I have tried to use std::move here, but actually no visable boost up
+    // I guess this is because the compiler have already deal with the plain version.
     this->E.push_back(E);
     this->psi.push_back(psi);
     this->rho0.push_back(rho0);
@@ -206,8 +213,9 @@ public:
       timeevolution(sys);
     }
     auto &&t1 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> &&difft = t1-t0;
-    std::cout << "*** End time evolution. Job is done in " << difft.count() << " sec." << std::endl;
+    std::chrono::duration<double> &&difft = t1 - t0;
+    std::cout << "*** End time evolution. Job is done in " << difft.count()
+              << " sec." << std::endl;
     for (size_t sys = 0; sys != nsys; ++sys) {
       writetimeseries(sys, rho[sys], rho0[sys]);
     }
