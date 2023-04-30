@@ -1,0 +1,7 @@
+number_of_states        9
+prefix_of_matrix_files  "heff/"
+suffix_of_matrix_files  "-matrix.vi"
+number_of_systems       1000
+number_of_steps         1000
+step_length             100.0
+initial_state           1

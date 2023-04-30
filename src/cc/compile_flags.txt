@@ -1,0 +1,5 @@
+-Ofast
+-W
+-fPIC
+--std=c++17
+-Iinclude
