@@ -37,3 +37,6 @@
 
 # Backup files
 *.bak
+
+rawdata.tar.gz
+rawdata/
