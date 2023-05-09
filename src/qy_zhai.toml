@@ -24,6 +24,16 @@ state_names_presented = [
   "612_2",
   "613_2",
 ]
-number_of_states_selected = 2
-state_names_selected = ["5620", "5621"]
+number_of_states_selected = 9
+state_names_selected = [
+  "5620",
+  "5621",
+  "602_1",
+  "603_1",
+  "604_1",
+  "610_1",
+  "611_1",
+  "612_1",
+  "613_1",
+]
 write_isosys = false

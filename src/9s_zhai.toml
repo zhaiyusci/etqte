@@ -1,6 +1,6 @@
 [etqtesettings]
 number_of_states_presented = 9
-prefix_of_matrix_files = "heff_zhai/"
+prefix_of_matrix_files = "heff2/"
 suffix_of_matrix_files = ".mat"
 number_of_systems = 1000
 number_of_steps = 1000

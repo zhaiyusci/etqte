@@ -61,6 +61,7 @@ class Ensemble {
 private:
   // General settings
   size_t nstate_, nsys_, istate_, nstep_, nstatep_;
+  std::string settingfname_;
   std::string prefix_, suffix_;
   std::vector<std::string> statenames_;
   std::vector<std::string> statenamesp_;
